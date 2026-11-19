@@ -1,0 +1,86 @@
+# .github/workflows/tests.yml
+name: Tests & Qualité
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      # 1. Récupération du code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Environnement Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      # 3. Dépendances
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      # 4. Lint avec Ruff
+      - name: Lint (Ruff)
+        run: ruff check app/ tests/ scripts/
+
+      # 5. Format check
+      - name: Format check (Ruff)
+        run: ruff format --check app/ tests/ scripts/
+
+      # 6. Tests — API
+      - name: Tests fonctionnels API
+        run: pytest tests/test_api.py -v --tb=short
+
+      # 7. Tests — Intégration
+      - name: Tests d'intégration
+        run: pytest tests/test_integration.py -v --tb=short
+
+      # 8. Tests — Robustesse
+      - name: Tests de robustesse
+        run: pytest tests/test_robustness.py -v --tb=short
+
+      # 9. Tests — Non-régression
+      - name: Tests de non-régression
+        run: pytest tests/test_regression.py -v --tb=short
+
+      # 10. Couverture globale
+      - name: Couverture globale
+        run: |
+          pytest tests/ \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=html:reports/htmlcov \
+            --cov-fail-under=90
+
+      # 11. Publication de la couverture (artifact)
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: reports/
+          retention-days: 14
+
+      # 12. Résumé dans la PR
+      - name: Résumé CI
+        if: always()
+        run: |
+          echo "## Résumé CI" >> $GITHUB_STEP_SUMMARY
+          echo "- Python : ${{ matrix.python-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Statut : ${{ job.status }}" >> $GITHUB_STEP_SUMMARY

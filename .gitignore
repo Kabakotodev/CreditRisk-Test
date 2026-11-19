@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Env
+venv*/
+.venv/
+env/
+.env
+
+# Modèles locaux (factices)
+model.joblib
+models/*.joblib
+!models/model_v1.joblib
+
+# Rapports locaux
+reports/locust_*
+reports/htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
